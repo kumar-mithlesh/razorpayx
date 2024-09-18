@@ -1,44 +1,44 @@
 # frozen_string_literal: true
 
+require 'faraday'
+require 'base64'
+require 'securerandom'
+
 # This module encapsulates the RazorpayX functionalities
 module RazorpayX
-  # Base class for RazorpayX operations
-  # Provides methods for authentication and making HTTP requests
+  def self.configuration
+    @configuration ||= Configuration.new
+  end
+
+  def self.configure
+    yield(configuration)
+  end
+
   class Base
     class << self
-      def authrization
-        username = Rails.application.credentials.dig(:razorpayx, :username)
-        password = Rails.application.credentials.dig(:razorpayx, :password)
+      def authorization
+        username = RazorpayX.configuration.username
+        password = RazorpayX.configuration.password
         "Basic #{Base64.strict_encode64("#{username}:#{password}")}"
       end
 
       def post(url, body, options = {})
-        HTTParty.post(
-          request_url(url),
-          headers: {
-            'Authorization' => authrization,
-            'Content-Type' => 'application/json',
-            'X-Payout-Idempotency' => options[:idempotency] || SecureRandom.uuid
-          },
-          body: body
-        )
+        response = Faraday.post(request_url(url)) do |req|
+          req.headers = build_headers(options[:idempotency])
+          req.body = body.to_json
+        end
+
+        handle_error(response) unless response.success?
+        response
       end
 
       def get(url)
-        HTTParty.get(
-          request_url(url),
-          headers: {
-            'Authorization' => self.class.authrization,
-            'Content-Type' => 'application/json'
-          }
-        )
-      end
+        response = Faraday.get(request_url(url)) do |req|
+          req.headers = build_headers
+        end
 
-      def handle_error(response)
-        {
-          error: "HTTP Error: #{response.code} - #{response.message}",
-          body: JSON.parse(response.body)
-        }
+        handle_error(response) unless response.success?
+        response
       end
 
       private
@@ -49,6 +49,18 @@ module RazorpayX
 
       def request_url(endpoint)
         "#{base_url}/#{endpoint}"
+      end
+
+      def build_headers(idempotency = SecureRandom.uuid)
+        {
+          'Authorization' => authorization,
+          'Content-Type' => 'application/json',
+          'X-Payout-Idempotency' => idempotency
+        }
+      end
+
+      def handle_error(response)
+        raise StandardError, "HTTP Error: #{response.status} - #{response.reason_phrase}. Body: #{response.body}"
       end
     end
   end
