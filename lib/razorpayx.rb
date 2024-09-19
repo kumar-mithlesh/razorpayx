@@ -9,4 +9,5 @@ class Razorpayx
   require_relative 'razorpay_x/contact'
   require_relative 'razorpay_x/fund_account'
   require_relative 'razorpay_x/payout'
+  require_relative 'razorpay_x/configuration'
 end

@@ -5,20 +5,33 @@ module RazorpayX
   class Payout < Base
     class << self
       def create(options = {})
-        options = options.symbolize_keys.slice(*permitted_keys)
+        response = post('payouts', options, { idempotency: idempotency })
+        handle_response(response)
+      end
 
-        response = post('/payouts', options.to_json, idempotency: options[:idempotency_key])
+      def all(account_number)
+        response = get("payouts?account_number=#{account_number}")
+        handle_response(response)
+      end
+
+      def find(payout_id)
+        response = get("payouts/#{payout_id}")
+        handle_response(response)
+      end
+
+      def cancel(payout_id)
+        response = post("payouts/#{payout_id}/cancel")
+        handle_response(response)
+      end
+
+      private
+
+      def handle_response(response)
         if response.success?
           JSON.parse(response.body)
         else
           handle_error(response)
         end
-      end
-
-      private
-
-      def permitted_keys
-        %i[account_number fund_account_id amount currency mode purpose queue_if_low_balance reference_id]
       end
     end
   end

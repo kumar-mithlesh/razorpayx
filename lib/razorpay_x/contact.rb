@@ -5,20 +5,33 @@ module RazorpayX
   class Contact < Base
     class << self
       def create(options = {})
-        options = options.slice(*permitted_keys)
+        response = post('contacts', options)
+        handle_response(response)
+      end
 
-        response = post('/contacts', options.to_json)
+      def all
+        response = get('contacts')
+        handle_response(response)
+      end
+
+      def find(contact_id)
+        response = get("contacts/#{contact_id}")
+        handle_response(response)
+      end
+
+      def update(contact_id, options = {})
+        response = patch("contacts/#{contact_id}", options)
+        handle_response(response)
+      end
+
+      private
+
+      def handle_response(response)
         if response.success?
           JSON.parse(response.body)
         else
           handle_error(response)
         end
-      end
-
-      private
-
-      def permitted_keys
-        %i[name email contact type reference_id notes]
       end
     end
   end

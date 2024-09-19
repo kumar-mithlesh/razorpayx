@@ -7,7 +7,7 @@ require 'securerandom'
 # This module encapsulates the RazorpayX functionalities
 module RazorpayX
   def self.configuration
-    @configuration ||= Configuration.new
+    @configuration ||= RazorpayX::Configuration.new
   end
 
   def self.configure
@@ -22,8 +22,18 @@ module RazorpayX
         "Basic #{Base64.strict_encode64("#{username}:#{password}")}"
       end
 
-      def post(url, body, options = {})
+      def post(url, body = nil, options = {})
         response = Faraday.post(request_url(url)) do |req|
+          req.headers = build_headers(options[:idempotency])
+          req.body = body.to_json
+        end
+
+        handle_error(response) unless response.success?
+        response
+      end
+
+      def patch(url, body = nil, options = {})
+        response = Faraday.patch(request_url(url)) do |req|
           req.headers = build_headers(options[:idempotency])
           req.body = body.to_json
         end
