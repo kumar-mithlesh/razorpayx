@@ -6,14 +6,6 @@ require 'securerandom'
 
 # This module encapsulates the RazorpayX functionalities
 module RazorpayX
-  def self.configuration
-    @configuration ||= RazorpayX::Configuration.new
-  end
-
-  def self.configure
-    yield(configuration)
-  end
-
   class Base
     class << self
       def authorization
@@ -49,6 +41,14 @@ module RazorpayX
 
         handle_error(response) unless response.success?
         response
+      end
+
+      def handle_response(response)
+        if response.success?
+          JSON.parse(response.body)
+        else
+          handle_error(response)
+        end
       end
 
       private

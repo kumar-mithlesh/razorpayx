@@ -23,16 +23,6 @@ module RazorpayX
         response = patch("contacts/#{contact_id}", options)
         handle_response(response)
       end
-
-      private
-
-      def handle_response(response)
-        if response.success?
-          JSON.parse(response.body)
-        else
-          handle_error(response)
-        end
-      end
     end
   end
 end

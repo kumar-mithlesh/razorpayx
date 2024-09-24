@@ -24,14 +24,19 @@ module RazorpayX
         handle_response(response)
       end
 
-      private
+      def validate(options = {})
+        response = post('fund_accounts/validations', options)
+        handle_response(response)
+      end
 
-      def handle_response(response)
-        if response.success?
-          JSON.parse(response.body)
-        else
-          handle_error(response)
-        end
+      def validate_by_id(fund_account_validation_id)
+        response = get("fund_accounts/validations/#{fund_account_validation_id}")
+        handle_response(response)
+      end
+
+      def fetch_validations
+        response = get('fund_accounts/validations')
+        handle_response(response)
       end
     end
   end
